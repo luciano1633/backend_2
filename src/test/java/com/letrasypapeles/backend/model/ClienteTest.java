@@ -1,4 +1,4 @@
-package com.letrasypapeles.backend;
+package com.letrasypapeles.backend.model;
 
 import com.letrasypapeles.backend.entity.Cliente;
 import com.letrasypapeles.backend.entity.Role;
