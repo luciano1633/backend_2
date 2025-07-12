@@ -46,7 +46,7 @@ public class SecurityConfig {
         return authProvider;
     }
 
-    // Configuración del filtro de seguridad
+   // Configuración del filtro de seguridad
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf().disable()
