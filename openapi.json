@@ -322,7 +322,7 @@
           "producto-controller"
         ],
         "summary": "Obtener un producto por su ID",
-        "description": "Retorna un producto específico según su ID.",
+        "description": "Retorna un producto específico según su ID con enlaces HATEOAS.",
         "operationId": "obtenerPorId_3",
         "parameters": [
           {
@@ -341,7 +341,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/Producto"
+                  "$ref": "#/components/schemas/EntityModelProducto"
                 }
               }
             }
@@ -351,7 +351,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/Producto"
+                  "$ref": "#/components/schemas/EntityModelProducto"
                 }
               }
             }
@@ -363,7 +363,7 @@
           "producto-controller"
         ],
         "summary": "Actualizar un producto existente",
-        "description": "Actualiza un producto existente según su ID.",
+        "description": "Actualiza un producto existente según su ID y lo retorna con enlaces HATEOAS.",
         "operationId": "actualizarProducto",
         "parameters": [
           {
@@ -392,7 +392,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/Producto"
+                  "$ref": "#/components/schemas/EntityModelProducto"
                 }
               }
             }
@@ -402,7 +402,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/Producto"
+                  "$ref": "#/components/schemas/EntityModelProducto"
                 }
               }
             }
@@ -442,6 +442,8 @@
         "tags": [
           "pedido-controller"
         ],
+        "summary": "Obtener un pedido por su ID",
+        "description": "Retorna un pedido específico según su ID con enlaces HATEOAS.",
         "operationId": "obtenerPorId_4",
         "parameters": [
           {
@@ -455,12 +457,22 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
+          "404": {
+            "description": "Pedido no encontrado.",
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/Pedido"
+                  "$ref": "#/components/schemas/EntityModelPedido"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Pedido encontrado.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntityModelPedido"
                 }
               }
             }
@@ -471,6 +483,8 @@
         "tags": [
           "pedido-controller"
         ],
+        "summary": "Actualizar un pedido existente",
+        "description": "Actualiza un pedido existente según su ID y lo retorna con enlaces HATEOAS.",
         "operationId": "actualizarPedido",
         "parameters": [
           {
@@ -495,11 +509,21 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Pedido actualizado exitosamente.",
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/Pedido"
+                  "$ref": "#/components/schemas/EntityModelPedido"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pedido no encontrado.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntityModelPedido"
                 }
               }
             }
@@ -510,6 +534,8 @@
         "tags": [
           "pedido-controller"
         ],
+        "summary": "Eliminar un pedido",
+        "description": "Elimina un pedido según su ID.",
         "operationId": "eliminarPedido",
         "parameters": [
           {
@@ -523,8 +549,11 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "404": {
+            "description": "Pedido no encontrado."
+          },
+          "204": {
+            "description": "Pedido eliminado exitosamente."
           }
         }
       }
@@ -626,6 +655,8 @@
         "tags": [
           "cliente-controller"
         ],
+        "summary": "Obtener un cliente por su ID",
+        "description": "Retorna un cliente específico según su ID con enlaces HATEOAS.",
         "operationId": "obtenerPorId_7",
         "parameters": [
           {
@@ -639,12 +670,22 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
+          "404": {
+            "description": "Cliente no encontrado.",
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/Cliente"
+                  "$ref": "#/components/schemas/EntityModelCliente"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Cliente encontrado.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntityModelCliente"
                 }
               }
             }
@@ -655,6 +696,8 @@
         "tags": [
           "cliente-controller"
         ],
+        "summary": "Actualizar un cliente existente",
+        "description": "Actualiza un cliente existente según su ID y lo retorna con enlaces HATEOAS.",
         "operationId": "actualizarCliente",
         "parameters": [
           {
@@ -678,12 +721,22 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK",
+          "404": {
+            "description": "Cliente no encontrado.",
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/Cliente"
+                  "$ref": "#/components/schemas/EntityModelCliente"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Cliente actualizado exitosamente.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntityModelCliente"
                 }
               }
             }
@@ -694,6 +747,8 @@
         "tags": [
           "cliente-controller"
         ],
+        "summary": "Eliminar un cliente",
+        "description": "Elimina un cliente según su ID.",
         "operationId": "eliminarCliente",
         "parameters": [
           {
@@ -708,7 +763,10 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "Cliente eliminado exitosamente."
+          },
+          "404": {
+            "description": "Cliente no encontrado."
           }
         }
       }
@@ -1019,7 +1077,7 @@
           "producto-controller"
         ],
         "summary": "Obtener todos los productos",
-        "description": "Retorna una lista de todos los productos.",
+        "description": "Retorna una lista de todos los productos con enlaces HATEOAS.",
         "operationId": "obtenerTodos_2",
         "responses": {
           "200": {
@@ -1027,10 +1085,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Producto"
-                  }
+                  "$ref": "#/components/schemas/CollectionModelEntityModelProducto"
                 }
               }
             }
@@ -1042,7 +1097,7 @@
           "producto-controller"
         ],
         "summary": "Crear un nuevo producto",
-        "description": "Crea un nuevo producto y lo retorna.",
+        "description": "Crea un nuevo producto y lo retorna con enlaces HATEOAS.",
         "operationId": "crearProducto",
         "requestBody": {
           "content": {
@@ -1060,7 +1115,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/Producto"
+                  "$ref": "#/components/schemas/EntityModelProducto"
                 }
               }
             }
@@ -1073,17 +1128,16 @@
         "tags": [
           "pedido-controller"
         ],
+        "summary": "Obtener todos los pedidos",
+        "description": "Retorna una lista de todos los pedidos con enlaces HATEOAS.",
         "operationId": "obtenerTodos_3",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Lista de pedidos obtenida exitosamente.",
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Pedido"
-                  }
+                  "$ref": "#/components/schemas/CollectionModelEntityModelPedido"
                 }
               }
             }
@@ -1094,6 +1148,8 @@
         "tags": [
           "pedido-controller"
         ],
+        "summary": "Crear un nuevo pedido",
+        "description": "Crea un nuevo pedido y lo retorna con enlaces HATEOAS.",
         "operationId": "crearPedido",
         "requestBody": {
           "content": {
@@ -1106,12 +1162,12 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK",
+          "201": {
+            "description": "Pedido creado exitosamente.",
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/Pedido"
+                  "$ref": "#/components/schemas/EntityModelPedido"
                 }
               }
             }
@@ -1226,6 +1282,8 @@
         "tags": [
           "cliente-controller"
         ],
+        "summary": "Registrar un nuevo cliente",
+        "description": "Registra un nuevo cliente y lo retorna con enlaces HATEOAS.",
         "operationId": "registrarCliente",
         "requestBody": {
           "content": {
@@ -1239,11 +1297,11 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Cliente registrado exitosamente.",
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/Cliente"
+                  "$ref": "#/components/schemas/EntityModelCliente"
                 }
               }
             }
@@ -1392,6 +1450,8 @@
         "tags": [
           "pedido-controller"
         ],
+        "summary": "Obtener pedidos por ID de cliente",
+        "description": "Retorna una lista de pedidos para un cliente específico con enlaces HATEOAS.",
         "operationId": "obtenerPorClienteId_1",
         "parameters": [
           {
@@ -1406,14 +1466,21 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Pedidos encontrados.",
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Pedido"
-                  }
+                  "$ref": "#/components/schemas/CollectionModelEntityModelPedido"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cliente no encontrado.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionModelEntityModelPedido"
                 }
               }
             }
@@ -1581,17 +1648,16 @@
         "tags": [
           "cliente-controller"
         ],
+        "summary": "Obtener todos los clientes",
+        "description": "Retorna una lista de todos los clientes con enlaces HATEOAS.",
         "operationId": "obtenerTodos_5",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Lista de clientes obtenida exitosamente.",
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Cliente"
-                  }
+                  "$ref": "#/components/schemas/CollectionModelEntityModelCliente"
                 }
               }
             }
@@ -1741,6 +1807,43 @@
           }
         }
       },
+      "EntityModelProducto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "precio": {
+            "type": "number"
+          },
+          "stock": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "categoria": {
+            "$ref": "#/components/schemas/Categoria"
+          },
+          "proveedor": {
+            "$ref": "#/components/schemas/Proveedor"
+          },
+          "_links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        }
+      },
+      "Links": {
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/Link"
+        }
+      },
       "Pedido": {
         "type": "object",
         "properties": {
@@ -1763,6 +1866,34 @@
             "items": {
               "$ref": "#/components/schemas/Producto"
             }
+          }
+        }
+      },
+      "EntityModelPedido": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "cliente": {
+            "$ref": "#/components/schemas/Cliente"
+          },
+          "listaProductos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Producto"
+            }
+          },
+          "_links": {
+            "$ref": "#/components/schemas/Links"
           }
         }
       },
@@ -1789,6 +1920,38 @@
           }
         }
       },
+      "EntityModelCliente": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "contraseña": {
+            "type": "string"
+          },
+          "puntosFidelidad": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "roles": {
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Role"
+            }
+          },
+          "_links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        }
+      },
       "Notificacion": {
         "type": "object",
         "properties": {
@@ -1805,6 +1968,92 @@
           },
           "cliente": {
             "$ref": "#/components/schemas/Cliente"
+          }
+        }
+      },
+      "CollectionModelEntityModelProducto": {
+        "type": "object",
+        "properties": {
+          "_embedded": {
+            "type": "object",
+            "properties": {
+              "productoList": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/EntityModelProducto"
+                }
+              }
+            }
+          },
+          "_links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        }
+      },
+      "CollectionModelEntityModelPedido": {
+        "type": "object",
+        "properties": {
+          "_embedded": {
+            "type": "object",
+            "properties": {
+              "pedidoList": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/EntityModelPedido"
+                }
+              }
+            }
+          },
+          "_links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        }
+      },
+      "CollectionModelEntityModelCliente": {
+        "type": "object",
+        "properties": {
+          "_embedded": {
+            "type": "object",
+            "properties": {
+              "clienteList": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/EntityModelCliente"
+                }
+              }
+            }
+          },
+          "_links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        }
+      },
+      "Link": {
+        "type": "object",
+        "properties": {
+          "href": {
+            "type": "string"
+          },
+          "hreflang": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "deprecation": {
+            "type": "string"
+          },
+          "profile": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "templated": {
+            "type": "boolean"
           }
         }
       }
