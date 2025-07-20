@@ -1,151 +1,117 @@
 package com.letrasypapeles.backend.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.letrasypapeles.backend.entity.Inventario;
 import com.letrasypapeles.backend.service.InventarioService;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(InventarioController.class)
 public class InventarioControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
     private InventarioService inventarioService;
 
-    @InjectMocks
-    private InventarioController inventarioController;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
-    public void testObtenerTodosLosInventarios() {
-        // Arrange
-        List<Inventario> inventarios = new ArrayList<>();
-        inventarios.add(Inventario.builder().id(1L).cantidad(10).build());
-        inventarios.add(Inventario.builder().id(2L).cantidad(20).build());
-
-        when(inventarioService.obtenerTodos()).thenReturn(inventarios);
-
-        // Act
-        ResponseEntity<List<Inventario>> response = inventarioController.obtenerTodos();
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(2, response.getBody().size());
+    @WithMockUser
+    public void testObtenerTodosLosInventarios() throws Exception {
+        when(inventarioService.obtenerTodos()).thenReturn(List.of(new Inventario()));
+        mockMvc.perform(get("/api/inventarios"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(1));
     }
 
     @Test
-    public void testObtenerInventarioPorId() {
-        // Arrange
+    @WithMockUser
+    public void testObtenerInventarioPorId() throws Exception {
         Long inventarioId = 1L;
         Inventario inventario = Inventario.builder().id(inventarioId).cantidad(10).build();
+        when(inventarioService.obtenerPorId(inventarioId)).thenReturn(Optional.of(inventario));
 
-        when(inventarioService.obtenerPorId(inventarioId)).thenReturn(java.util.Optional.of(inventario));
-
-        // Act
-        ResponseEntity<Inventario> response = inventarioController.obtenerPorId(inventarioId);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(inventarioId, response.getBody().getId());
-        assertEquals(10, response.getBody().getCantidad());
+        mockMvc.perform(get("/api/inventarios/{id}", inventarioId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cantidad").value(10));
     }
 
     @Test
-    public void testCrearInventario() {
-        // Arrange
+    @WithMockUser
+    public void testCrearInventario() throws Exception {
         Inventario inventario = Inventario.builder().cantidad(10).build();
+        when(inventarioService.guardar(any(Inventario.class))).thenReturn(inventario);
 
-        when(inventarioService.guardar(inventario)).thenReturn(inventario);
-
-        // Act
-        ResponseEntity<Inventario> response = inventarioController.crearInventario(inventario);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(10, response.getBody().getCantidad());
+        mockMvc.perform(post("/api/inventarios")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(inventario)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cantidad").value(10));
     }
 
     @Test
-    public void testActualizarInventario() {
-        // Arrange
+    @WithMockUser
+    public void testActualizarInventario() throws Exception {
         Long inventarioId = 1L;
-        Inventario inventario = Inventario.builder().id(inventarioId).cantidad(20).build();
+        Inventario inventarioActualizado = Inventario.builder().id(inventarioId).cantidad(20).build();
+        when(inventarioService.obtenerPorId(inventarioId)).thenReturn(Optional.of(new Inventario()));
+        when(inventarioService.guardar(any(Inventario.class))).thenReturn(inventarioActualizado);
 
-        when(inventarioService.obtenerPorId(inventarioId)).thenReturn(java.util.Optional.of(Inventario.builder().id(inventarioId).cantidad(10).build()));
-        when(inventarioService.guardar(inventario)).thenReturn(inventario);
-
-        // Act
-        ResponseEntity<Inventario> response = inventarioController.actualizarInventario(inventarioId, inventario);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(inventarioId, response.getBody().getId());
-        assertEquals(20, response.getBody().getCantidad());
+        mockMvc.perform(put("/api/inventarios/{id}", inventarioId)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(inventarioActualizado)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cantidad").value(20));
     }
 
     @Test
-    public void testEliminarInventario() {
-        // Arrange
+    @WithMockUser
+    public void testEliminarInventario() throws Exception {
         Long inventarioId = 1L;
+        when(inventarioService.obtenerPorId(inventarioId)).thenReturn(Optional.of(new Inventario()));
 
-        when(inventarioService.obtenerPorId(inventarioId)).thenReturn(java.util.Optional.of(Inventario.builder().id(inventarioId).cantidad(10).build()));
-
-        // Act
-        ResponseEntity<Void> response = inventarioController.eliminarInventario(inventarioId);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        mockMvc.perform(delete("/api/inventarios/{id}", inventarioId).with(csrf()))
+                .andExpect(status().isOk());
     }
 
     @Test
-    public void testObtenerInventarioPorProductoId() {
-        // Arrange
+    @WithMockUser
+    public void testObtenerInventarioPorProductoId() throws Exception {
         Long productoId = 1L;
-        List<Inventario> inventarios = new ArrayList<>();
-        inventarios.add(Inventario.builder().id(1L).cantidad(10).build());
-        inventarios.add(Inventario.builder().id(2L).cantidad(20).build());
+        when(inventarioService.obtenerPorProductoId(productoId)).thenReturn(List.of(new Inventario()));
 
-        when(inventarioService.obtenerPorProductoId(productoId)).thenReturn(inventarios);
-
-        // Act
-        ResponseEntity<List<Inventario>> response = inventarioController.obtenerPorProductoId(productoId);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(2, response.getBody().size());
+        mockMvc.perform(get("/api/inventarios/producto/{productoId}", productoId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(1));
     }
 
     @Test
-    public void testObtenerInventarioPorSucursalId() {
-        // Arrange
+    @WithMockUser
+    public void testObtenerInventarioPorSucursalId() throws Exception {
         Long sucursalId = 1L;
-        List<Inventario> inventarios = new ArrayList<>();
-        inventarios.add(Inventario.builder().id(1L).cantidad(10).build());
-        inventarios.add(Inventario.builder().id(2L).cantidad(20).build());
+        when(inventarioService.obtenerPorSucursalId(sucursalId)).thenReturn(List.of(new Inventario()));
 
-        when(inventarioService.obtenerPorSucursalId(sucursalId)).thenReturn(inventarios);
-
-        // Act
-        ResponseEntity<List<Inventario>> response = inventarioController.obtenerPorSucursalId(sucursalId);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(2, response.getBody().size());
+        mockMvc.perform(get("/api/inventarios/sucursal/{sucursalId}", sucursalId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(1));
     }
 }

@@ -1,90 +1,77 @@
 package com.letrasypapeles.backend.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.letrasypapeles.backend.entity.Role;
 import com.letrasypapeles.backend.service.RoleService;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import java.util.List;
+import java.util.Optional;
+
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(RoleController.class)
+@WithMockUser(roles = "ADMIN")
 public class RoleControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
     private RoleService roleService;
 
-    @InjectMocks
-    private RoleController roleController;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
-    public void testCrearRole() {
-        // Arrange
+    public void testCrearRole() throws Exception {
         Role role = Role.builder().nombre("ADMIN").build();
+        when(roleService.guardar(any(Role.class))).thenReturn(role);
 
-        when(roleService.guardar(role)).thenReturn(role);
-
-        // Act
-        ResponseEntity<Role> response = roleController.crearRole(role);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("ADMIN", response.getBody().getNombre());
+        mockMvc.perform(post("/api/roles")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(role)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("ADMIN"));
     }
 
     @Test
-    public void testObtenerRolePorNombre() {
-        // Arrange
+    public void testObtenerRolePorNombre() throws Exception {
         String roleNombre = "ADMIN";
         Role role = Role.builder().nombre(roleNombre).build();
+        when(roleService.obtenerPorNombre(roleNombre)).thenReturn(Optional.of(role));
 
-        when(roleService.obtenerPorNombre(roleNombre)).thenReturn(java.util.Optional.of(role));
-
-        // Act
-        ResponseEntity<Role> response = roleController.obtenerPorNombre(roleNombre);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(roleNombre, response.getBody().getNombre());
+        mockMvc.perform(get("/api/roles/{nombre}", roleNombre))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value(roleNombre));
     }
 
     @Test
-    public void testEliminarRole() {
-        // Arrange
+    public void testEliminarRole() throws Exception {
         String roleNombre = "ADMIN";
+        when(roleService.obtenerPorNombre(roleNombre)).thenReturn(Optional.of(new Role()));
 
-        when(roleService.obtenerPorNombre(roleNombre)).thenReturn(java.util.Optional.of(Role.builder().nombre(roleNombre).build()));
-
-        // Act
-        ResponseEntity<Void> response = roleController.eliminarRole(roleNombre);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        mockMvc.perform(delete("/api/roles/{nombre}", roleNombre).with(csrf()))
+                .andExpect(status().isOk());
     }
 
     @Test
-    public void testObtenerTodosLosRoles() {
-        // Arrange
-        java.util.List<Role> roles = new java.util.ArrayList<>();
-        roles.add(Role.builder().nombre("ADMIN").build());
-        roles.add(Role.builder().nombre("USER").build());
+    public void testObtenerTodosLosRoles() throws Exception {
+        when(roleService.obtenerTodos()).thenReturn(List.of(new Role("ADMIN"), new Role("USER")));
 
-        when(roleService.obtenerTodos()).thenReturn(roles);
-
-        // Act
-        ResponseEntity<java.util.List<Role>> response = roleController.obtenerTodos();
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(2, response.getBody().size());
+        mockMvc.perform(get("/api/roles"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(2));
     }
 }

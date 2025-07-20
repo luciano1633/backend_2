@@ -1,113 +1,99 @@
 package com.letrasypapeles.backend.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.letrasypapeles.backend.entity.Categoria;
 import com.letrasypapeles.backend.service.CategoriaService;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(CategoriaController.class)
 public class CategoriaControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
     private CategoriaService categoriaService;
 
-    @InjectMocks
-    private CategoriaController categoriaController;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
-    public void testObtenerTodasLasCategorias() {
-        // Arrange
+    @WithMockUser
+    public void testObtenerTodasLasCategorias() throws Exception {
         List<Categoria> categorias = new ArrayList<>();
         categorias.add(Categoria.builder().nombre("Libros").build());
-        categorias.add(Categoria.builder().nombre("Música").build());
-
         when(categoriaService.obtenerTodas()).thenReturn(categorias);
 
-        // Act
-        ResponseEntity<List<Categoria>> response = categoriaController.obtenerTodas();
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(2, response.getBody().size());
+        mockMvc.perform(get("/api/categorias"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(1));
     }
 
     @Test
-    public void testObtenerCategoriaPorId() {
-        // Arrange
+    @WithMockUser
+    public void testObtenerCategoriaPorId() throws Exception {
         Long categoriaId = 1L;
         Categoria categoria = Categoria.builder().id(categoriaId).nombre("Libros").build();
+        when(categoriaService.obtenerPorId(categoriaId)).thenReturn(Optional.of(categoria));
 
-        when(categoriaService.obtenerPorId(categoriaId)).thenReturn(java.util.Optional.of(categoria));
-
-        // Act
-        ResponseEntity<Categoria> response = categoriaController.obtenerPorId(categoriaId);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(categoriaId, response.getBody().getId());
-        assertEquals("Libros", response.getBody().getNombre());
+        mockMvc.perform(get("/api/categorias/{id}", categoriaId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("Libros"));
     }
 
     @Test
-    public void testCrearCategoria() {
-        // Arrange
+    @WithMockUser
+    public void testCrearCategoria() throws Exception {
         Categoria categoria = Categoria.builder().nombre("Libros").build();
+        when(categoriaService.guardar(any(Categoria.class))).thenReturn(categoria);
 
-        when(categoriaService.guardar(categoria)).thenReturn(categoria);
-
-        // Act
-        ResponseEntity<Categoria> response = categoriaController.crearCategoria(categoria);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Libros", response.getBody().getNombre());
+        mockMvc.perform(post("/api/categorias")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(categoria)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("Libros"));
     }
 
     @Test
-    public void testActualizarCategoria() {
-        // Arrange
+    @WithMockUser
+    public void testActualizarCategoria() throws Exception {
         Long categoriaId = 1L;
-        Categoria categoria = Categoria.builder().id(categoriaId).nombre("Música").build();
+        Categoria categoriaActualizada = Categoria.builder().id(categoriaId).nombre("Música").build();
+        when(categoriaService.obtenerPorId(categoriaId)).thenReturn(Optional.of(Categoria.builder().id(categoriaId).nombre("Libros").build()));
+        when(categoriaService.guardar(any(Categoria.class))).thenReturn(categoriaActualizada);
 
-        when(categoriaService.obtenerPorId(categoriaId)).thenReturn(java.util.Optional.of(Categoria.builder().id(categoriaId).nombre("Libros").build()));
-        when(categoriaService.guardar(categoria)).thenReturn(categoria);
-
-        // Act
-        ResponseEntity<Categoria> response = categoriaController.actualizarCategoria(categoriaId, categoria);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(categoriaId, response.getBody().getId());
-        assertEquals("Música", response.getBody().getNombre());
+        mockMvc.perform(put("/api/categorias/{id}", categoriaId)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(categoriaActualizada)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("Música"));
     }
 
     @Test
-    public void testEliminarCategoria() {
-        // Arrange
+    @WithMockUser
+    public void testEliminarCategoria() throws Exception {
         Long categoriaId = 1L;
+        when(categoriaService.obtenerPorId(categoriaId)).thenReturn(Optional.of(Categoria.builder().id(categoriaId).nombre("Libros").build()));
 
-        when(categoriaService.obtenerPorId(categoriaId)).thenReturn(java.util.Optional.of(Categoria.builder().id(categoriaId).nombre("Libros").build()));
-
-        // Act
-        ResponseEntity<Void> response = categoriaController.eliminarCategoria(categoriaId);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        mockMvc.perform(delete("/api/categorias/{id}", categoriaId).with(csrf()))
+                .andExpect(status().isOk());
     }
 }

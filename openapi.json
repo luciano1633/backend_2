@@ -1360,6 +1360,36 @@
         }
       }
     },
+    "/api/auth/signin": {
+      "post": {
+        "tags": [
+          "auth-controller"
+        ],
+        "operationId": "authenticateUser",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/roles/{nombre}": {
       "get": {
         "tags": [
@@ -1712,7 +1742,8 @@
             "type": "string"
           },
           "contraseña": {
-            "type": "string"
+            "type": "string",
+            "writeOnly": true
           },
           "puntosFidelidad": {
             "type": "integer",
@@ -1797,13 +1828,6 @@
         "properties": {
           "nombre": {
             "type": "string"
-          },
-          "clientes": {
-            "uniqueItems": true,
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Cliente"
-            }
           }
         }
       },
@@ -1934,7 +1958,8 @@
             "type": "string"
           },
           "contraseña": {
-            "type": "string"
+            "type": "string",
+            "writeOnly": true
           },
           "puntosFidelidad": {
             "type": "integer",
@@ -1968,6 +1993,21 @@
           },
           "cliente": {
             "$ref": "#/components/schemas/Cliente"
+          }
+        }
+      },
+      "LoginRequest": {
+        "required": [
+          "password",
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
           }
         }
       },

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -22,6 +23,7 @@ public class SucursalController {
             @ApiResponse(responseCode = "200", description = "Lista de sucursales obtenida exitosamente.")
     })
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Sucursal>> obtenerTodas() {
         List<Sucursal> sucursales = sucursalService.obtenerTodas();
         return ResponseEntity.ok(sucursales);
@@ -33,6 +35,7 @@ public class SucursalController {
             @ApiResponse(responseCode = "404", description = "Sucursal no encontrada.")
     })
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Sucursal> obtenerPorId(@PathVariable Long id) {
         return sucursalService.obtenerPorId(id)
                 .map(ResponseEntity::ok)
@@ -44,6 +47,7 @@ public class SucursalController {
             @ApiResponse(responseCode = "200", description = "Sucursal creada exitosamente.")
     })
     @PostMapping
+    @PreAuthorize("hasRole('GERENTE')")
     public ResponseEntity<Sucursal> crearSucursal(@RequestBody Sucursal sucursal) {
         Sucursal nuevaSucursal = sucursalService.guardar(sucursal);
         return ResponseEntity.ok(nuevaSucursal);
@@ -55,6 +59,7 @@ public class SucursalController {
             @ApiResponse(responseCode = "404", description = "Sucursal no encontrada.")
     })
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('GERENTE')")
     public ResponseEntity<Sucursal> actualizarSucursal(@PathVariable Long id, @RequestBody Sucursal sucursal) {
         return sucursalService.obtenerPorId(id)
                 .map(s -> {
@@ -71,6 +76,7 @@ public class SucursalController {
             @ApiResponse(responseCode = "404", description = "Sucursal no encontrada.")
     })
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('GERENTE')")
     public ResponseEntity<Void> eliminarSucursal(@PathVariable Long id) {
         return sucursalService.obtenerPorId(id)
                 .map(s -> {
@@ -80,4 +86,3 @@ public class SucursalController {
                 .orElse(ResponseEntity.notFound().build());
     }
 }
-

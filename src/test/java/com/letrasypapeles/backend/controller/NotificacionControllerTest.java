@@ -1,114 +1,90 @@
 package com.letrasypapeles.backend.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.letrasypapeles.backend.entity.Notificacion;
 import com.letrasypapeles.backend.service.NotificacionService;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(NotificacionController.class)
 public class NotificacionControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
     private NotificacionService notificacionService;
 
-    @InjectMocks
-    private NotificacionController notificacionController;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
-    public void testObtenerTodasLasNotificaciones() {
-        // Arrange
-        List<Notificacion> notificaciones = new ArrayList<>();
-        notificaciones.add(Notificacion.builder().id(1L).mensaje("Notificación 1").build());
-        notificaciones.add(Notificacion.builder().id(2L).mensaje("Notificación 2").build());
-
-        when(notificacionService.obtenerTodas()).thenReturn(notificaciones);
-
-        // Act
-        ResponseEntity<List<Notificacion>> response = notificacionController.obtenerTodas();
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(2, response.getBody().size());
+    @WithMockUser
+    public void testObtenerTodasLasNotificaciones() throws Exception {
+        when(notificacionService.obtenerTodas()).thenReturn(List.of(new Notificacion()));
+        mockMvc.perform(get("/api/notificaciones"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(1));
     }
 
     @Test
-    public void testObtenerNotificacionPorId() {
-        // Arrange
+    @WithMockUser
+    public void testObtenerNotificacionPorId() throws Exception {
         Long notificacionId = 1L;
         Notificacion notificacion = Notificacion.builder().id(notificacionId).mensaje("Notificación 1").build();
-
         when(notificacionService.obtenerPorId(notificacionId)).thenReturn(Optional.of(notificacion));
 
-        // Act
-        ResponseEntity<Notificacion> response = notificacionController.obtenerPorId(notificacionId);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(notificacionId, response.getBody().getId());
-        assertEquals("Notificación 1", response.getBody().getMensaje());
+        mockMvc.perform(get("/api/notificaciones/{id}", notificacionId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mensaje").value("Notificación 1"));
     }
 
     @Test
-    public void testCrearNotificacion() {
-        // Arrange
+    @WithMockUser
+    public void testCrearNotificacion() throws Exception {
         Notificacion notificacion = Notificacion.builder().mensaje("Nueva Notificación").build();
+        when(notificacionService.guardar(any(Notificacion.class))).thenReturn(notificacion);
 
-        when(notificacionService.guardar(notificacion)).thenReturn(notificacion);
-
-        // Act
-        ResponseEntity<Notificacion> response = notificacionController.crearNotificacion(notificacion);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Nueva Notificación", response.getBody().getMensaje());
+        mockMvc.perform(post("/api/notificaciones")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(notificacion)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mensaje").value("Nueva Notificación"));
     }
 
     @Test
-    public void testEliminarNotificacion() {
-        // Arrange
+    @WithMockUser
+    public void testEliminarNotificacion() throws Exception {
         Long notificacionId = 1L;
+        when(notificacionService.obtenerPorId(notificacionId)).thenReturn(Optional.of(new Notificacion()));
 
-        when(notificacionService.obtenerPorId(notificacionId)).thenReturn(Optional.of(Notificacion.builder().id(notificacionId).mensaje("Notificación 1").build()));
-
-        // Act
-        ResponseEntity<Void> response = notificacionController.eliminarNotificacion(notificacionId);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        mockMvc.perform(delete("/api/notificaciones/{id}", notificacionId).with(csrf()))
+                .andExpect(status().isOk());
     }
 
     @Test
-    public void testObtenerNotificacionesPorClienteId() {
-        // Arrange
+    @WithMockUser
+    public void testObtenerNotificacionesPorClienteId() throws Exception {
         Long clienteId = 1L;
-        List<Notificacion> notificaciones = new ArrayList<>();
-        notificaciones.add(Notificacion.builder().id(1L).mensaje("Notificación 1").build());
-        notificaciones.add(Notificacion.builder().id(2L).mensaje("Notificación 2").build());
+        when(notificacionService.obtenerPorClienteId(clienteId)).thenReturn(List.of(new Notificacion()));
 
-        when(notificacionService.obtenerPorClienteId(clienteId)).thenReturn(notificaciones);
-
-        // Act
-        ResponseEntity<List<Notificacion>> response = notificacionController.obtenerPorClienteId(clienteId);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(2, response.getBody().size());
+        mockMvc.perform(get("/api/notificaciones/cliente/{clienteId}", clienteId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(1));
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,6 +31,7 @@ public class ProductoController {
             @ApiResponse(responseCode = "200", description = "Lista de productos obtenida exitosamente.")
     })
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CollectionModel<EntityModel<Producto>>> obtenerTodos() {
         List<EntityModel<Producto>> productos = productoService.obtenerTodos().stream()
                 .map(producto -> {
@@ -56,6 +58,7 @@ public class ProductoController {
             @ApiResponse(responseCode = "404", description = "Producto no encontrado.")
     })
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<EntityModel<Producto>> obtenerPorId(@PathVariable Long id) {
         return productoService.obtenerPorId(id)
                 .map(producto -> {
@@ -76,6 +79,7 @@ public class ProductoController {
             @ApiResponse(responseCode = "200", description = "Producto creado exitosamente.")
     })
     @PostMapping
+    @PreAuthorize("hasAnyRole('EMPLEADO', 'GERENTE')")
     public ResponseEntity<EntityModel<Producto>> crearProducto(@RequestBody Producto producto) {
         Producto nuevoProducto = productoService.guardar(producto);
         try {
@@ -94,6 +98,7 @@ public class ProductoController {
             @ApiResponse(responseCode = "404", description = "Producto no encontrado.")
     })
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('EMPLEADO', 'GERENTE')")
     public ResponseEntity<EntityModel<Producto>> actualizarProducto(@PathVariable Long id, @RequestBody Producto producto) {
         return productoService.obtenerPorId(id)
                 .map(p -> {
@@ -117,6 +122,7 @@ public class ProductoController {
             @ApiResponse(responseCode = "404", description = "Producto no encontrado.")
     })
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('GERENTE')")
     public ResponseEntity<Void> eliminarProducto(@PathVariable Long id) {
         return productoService.obtenerPorId(id)
                 .map(p -> {

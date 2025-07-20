@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,6 +30,7 @@ public class PedidoController {
             @ApiResponse(responseCode = "200", description = "Lista de pedidos obtenida exitosamente.")
     })
     @GetMapping
+    @PreAuthorize("hasAnyRole('EMPLEADO', 'GERENTE')")
     public ResponseEntity<CollectionModel<EntityModel<Pedido>>> obtenerTodos() {
         List<EntityModel<Pedido>> pedidos = pedidoService.obtenerTodos().stream()
                 .map(this::toEntityModel)
@@ -48,6 +50,7 @@ public class PedidoController {
             @ApiResponse(responseCode = "404", description = "Pedido no encontrado.")
     })
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<EntityModel<Pedido>> obtenerPorId(@PathVariable Long id) {
         return pedidoService.obtenerPorId(id)
                 .map(this::toEntityModel)
@@ -61,6 +64,7 @@ public class PedidoController {
             @ApiResponse(responseCode = "404", description = "Cliente no encontrado.")
     })
     @GetMapping("/cliente/{clienteId}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CollectionModel<EntityModel<Pedido>>> obtenerPorClienteId(@PathVariable Long clienteId) {
         List<EntityModel<Pedido>> pedidos = pedidoService.obtenerPorClienteId(clienteId).stream()
                 .map(this::toEntityModel)
@@ -79,6 +83,7 @@ public class PedidoController {
             @ApiResponse(responseCode = "201", description = "Pedido creado exitosamente.")
     })
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<EntityModel<Pedido>> crearPedido(@RequestBody Pedido pedido) {
         Pedido nuevoPedido = pedidoService.guardar(pedido);
         return ResponseEntity.status(201).body(toEntityModel(nuevoPedido));
@@ -90,6 +95,7 @@ public class PedidoController {
             @ApiResponse(responseCode = "404", description = "Pedido no encontrado.")
     })
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('EMPLEADO', 'GERENTE')")
     public ResponseEntity<EntityModel<Pedido>> actualizarPedido(@PathVariable Long id, @RequestBody Pedido pedido) {
         return pedidoService.obtenerPorId(id)
                 .map(p -> {
@@ -106,6 +112,7 @@ public class PedidoController {
             @ApiResponse(responseCode = "404", description = "Pedido no encontrado.")
     })
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('GERENTE')")
     public ResponseEntity<Void> eliminarPedido(@PathVariable Long id) {
         return pedidoService.obtenerPorId(id)
                 .map(p -> {

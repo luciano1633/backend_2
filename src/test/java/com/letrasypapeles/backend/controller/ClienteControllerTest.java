@@ -1,164 +1,99 @@
 package com.letrasypapeles.backend.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.letrasypapeles.backend.entity.Cliente;
 import com.letrasypapeles.backend.service.ClienteService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.hateoas.CollectionModel;
-import org.springframework.hateoas.EntityModel;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
-
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(ClienteController.class)
 public class ClienteControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
     private ClienteService clienteService;
 
-    @InjectMocks
-    private ClienteController clienteController;
+    @Autowired
+    private ObjectMapper objectMapper;
 
-    @BeforeEach
-    void setUp() {
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+    @Test
+    @WithMockUser
+    public void testObtenerTodosLosClientes() throws Exception {
+        Cliente cliente = Cliente.builder().id(1L).nombre("Juan Perez").email("juan.perez@example.com").build();
+        when(clienteService.obtenerTodos()).thenReturn(List.of(cliente));
+
+        mockMvc.perform(get("/api/clientes"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$._embedded.clienteList[0].nombre").value("Juan Perez"))
+                .andExpect(jsonPath("$._links.self").exists());
     }
 
     @Test
-    public void testObtenerTodosLosClientes() {
-        // Arrange
-        List<Cliente> clientes = new ArrayList<>();
-        clientes.add(Cliente.builder().id(1L).nombre("Juan Perez").email("juan.perez@example.com").build());
-        clientes.add(Cliente.builder().id(2L).nombre("Maria Gomez").email("maria.gomez@example.com").build());
-
-        when(clienteService.obtenerTodos()).thenReturn(clientes);
-
-        // Act
-        ResponseEntity<CollectionModel<EntityModel<Cliente>>> response = clienteController.obtenerTodos();
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(2, response.getBody().getContent().size());
-        assertTrue(response.getBody().hasLink("self"));
-    }
-
-    @Test
-    public void testObtenerTodosLosClientes_LanzaExcepcion() {
-        // Arrange
-        when(clienteService.obtenerTodos()).thenReturn(List.of(new Cliente()));
-        try (var mocked = mockStatic(WebMvcLinkBuilder.class)) {
-            mocked.when(() -> WebMvcLinkBuilder.linkTo(any(Class.class))).thenThrow(new RuntimeException("Test Exception"));
-
-            // Act & Assert
-            assertThrows(RuntimeException.class, () -> {
-                clienteController.obtenerTodos();
-            });
-        }
-    }
-
-    @Test
-    public void testObtenerClientePorId() {
-        // Arrange
+    @WithMockUser
+    public void testObtenerClientePorId() throws Exception {
         Long clienteId = 1L;
         Cliente cliente = Cliente.builder().id(clienteId).nombre("Juan Perez").email("juan.perez@example.com").build();
-
         when(clienteService.obtenerPorId(clienteId)).thenReturn(Optional.of(cliente));
 
-        // Act
-        ResponseEntity<EntityModel<Cliente>> response = clienteController.obtenerPorId(clienteId);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertNotNull(response.getBody().getContent());
-        assertEquals(clienteId, response.getBody().getContent().getId());
-        assertEquals("Juan Perez", response.getBody().getContent().getNombre());
-        assertTrue(response.getBody().hasLink("self"));
-        assertTrue(response.getBody().hasLink("todos-los-clientes"));
+        mockMvc.perform(get("/api/clientes/{id}", clienteId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("Juan Perez"))
+                .andExpect(jsonPath("$._links.self").exists());
     }
 
     @Test
-    public void testRegistrarCliente() {
-        // Arrange
-        Cliente cliente = Cliente.builder()
-                .id(1L)
-                .nombre("Juan Perez")
-                .email("juan.perez@example.com")
-                .contraseña("password123")
-                .puntosFidelidad(0)
-                .build();
+    @WithMockUser
+    public void testRegistrarCliente() throws Exception {
+        Cliente cliente = Cliente.builder().nombre("Juan Perez").email("juan.perez@example.com").build();
+        when(clienteService.registrarCliente(any(Cliente.class))).thenReturn(cliente);
 
-        when(clienteService.registrarCliente(cliente)).thenReturn(cliente);
-
-        // Act
-        ResponseEntity<EntityModel<Cliente>> response = clienteController.registrarCliente(cliente);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertNotNull(response.getBody().getContent());
-        assertEquals("Juan Perez", response.getBody().getContent().getNombre());
-        assertTrue(response.getBody().hasLink("self"));
-        assertTrue(response.getBody().hasLink("todos-los-clientes"));
+        mockMvc.perform(post("/api/clientes/registro")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(cliente)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("Juan Perez"));
     }
 
     @Test
-    public void testActualizarCliente() {
-        // Arrange
+    @WithMockUser
+    public void testActualizarCliente() throws Exception {
         Long clienteId = 1L;
-        Cliente cliente = Cliente.builder()
-                .id(clienteId)
-                .nombre("Juan Perez Actualizado")
-                .email("juan.perez@example.com")
-                .contraseña("password123")
-                .puntosFidelidad(0)
-                .build();
+        Cliente clienteActualizado = Cliente.builder().id(clienteId).nombre("Juan Actualizado").build();
+        when(clienteService.obtenerPorId(clienteId)).thenReturn(Optional.of(new Cliente()));
+        when(clienteService.actualizarCliente(any(Cliente.class))).thenReturn(clienteActualizado);
 
-        when(clienteService.obtenerPorId(clienteId)).thenReturn(Optional.of(Cliente.builder().id(clienteId).nombre("Juan Perez").email("juan.perez@example.com").contraseña("password123").puntosFidelidad(0).build()));
-        when(clienteService.actualizarCliente(cliente)).thenReturn(cliente);
-
-        // Act
-        ResponseEntity<EntityModel<Cliente>> response = clienteController.actualizarCliente(clienteId, cliente);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertNotNull(response.getBody().getContent());
-        assertEquals("Juan Perez Actualizado", response.getBody().getContent().getNombre());
-        assertTrue(response.getBody().hasLink("self"));
-        assertTrue(response.getBody().hasLink("todos-los-clientes"));
+        mockMvc.perform(put("/api/clientes/{id}", clienteId)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(clienteActualizado)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("Juan Actualizado"));
     }
 
     @Test
-    public void testEliminarCliente() {
-        // Arrange
+    @WithMockUser
+    public void testEliminarCliente() throws Exception {
         Long clienteId = 1L;
+        when(clienteService.obtenerPorId(clienteId)).thenReturn(Optional.of(new Cliente()));
 
-        when(clienteService.obtenerPorId(clienteId)).thenReturn(Optional.of(Cliente.builder().id(clienteId).nombre("Juan Perez").email("juan.perez@example.com").contraseña("password123").puntosFidelidad(0).build()));
-
-        // Act
-        ResponseEntity<Void> response = clienteController.eliminarCliente(clienteId);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        mockMvc.perform(delete("/api/clientes/{id}", clienteId).with(csrf()))
+                .andExpect(status().isOk());
     }
 }

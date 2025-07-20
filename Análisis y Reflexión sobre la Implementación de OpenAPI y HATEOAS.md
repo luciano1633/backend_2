@@ -28,6 +28,15 @@ Tanto OpenAPI como HATEOAS contribuyen a una mayor mantenibilidad del proyecto a
 - **Refactorización Segura:** Gracias a HATEOAS, cambiar las rutas de los endpoints se convierte en una tarea más segura. Mientras los nombres de las relaciones (`rel`) se mantengan consistentes (ej. "cliente", "todos-los-pedidos"), los clientes que sigan los enlaces seguirán funcionando correctamente.
 - **Facilidad para Nuevos Integrantes:** Cuando un nuevo desarrollador se une al equipo, la interfaz de Swagger UI se convierte en la principal fuente de conocimiento sobre la API. Esto acelera su proceso de aprendizaje y reduce el tiempo necesario para que puedan empezar a contribuir.
 
+## 4. Impacto de las Mejoras en las Pruebas Unitarias
+
+Además de la implementación de OpenAPI y HATEOAS, se ha realizado un esfuerzo significativo para mejorar la cobertura y fiabilidad de las pruebas unitarias del proyecto. Esto tiene un impacto directo en la calidad y mantenibilidad de la API:
+
+-   **Mayor Confianza en el Código:** Al aumentar la cobertura de las pruebas unitarias (alcanzando un 93% de éxito en las pruebas generadas), se incrementa la confianza en que los cambios y nuevas funcionalidades no introducirán regresiones. Cada componente clave del sistema, incluyendo las capas de seguridad, ahora está más robustamente validado.
+-   **Detección Temprana de Defectos:** Las pruebas unitarias actúan como una primera línea de defensa, detectando errores en las unidades de código más pequeñas antes de que se integren en el sistema completo. Esto reduce el costo y el tiempo de depuración.
+-   **Facilita la Refactorización:** Con un conjunto de pruebas sólido, los desarrolladores pueden refactorizar el código con mayor seguridad, sabiendo que si rompen alguna funcionalidad existente, las pruebas lo detectarán rápidamente.
+-   **Mejora la Mantenibilidad a Largo Plazo:** Un código bien probado es más fácil de entender y mantener. Las pruebas sirven como documentación viva del comportamiento esperado del sistema, lo que es invaluable para nuevos desarrolladores o para el mantenimiento a largo plazo.
+
 ## Conclusión
 
-La implementación de OpenAPI y HATEOAS no es simplemente un requisito técnico, sino una inversión estratégica en la calidad y escalabilidad del proyecto. OpenAPI aporta claridad, consistencia y profesionalismo, mientras que HATEOAS proporciona flexibilidad, bajo acoplamiento y una mejor experiencia de navegación para los clientes de la API. Juntas, estas tecnologías aseguran que la API sea robusta, fácil de usar y mantenible a lo largo del tiempo.
+La implementación de OpenAPI y HATEOAS, junto con la mejora continua de las pruebas unitarias, no es simplemente un requisito técnico, sino una inversión estratégica en la calidad y escalabilidad del proyecto. OpenAPI aporta claridad, consistencia y profesionalismo, mientras que HATEOAS proporciona flexibilidad, bajo acoplamiento y una mejor experiencia de navegación para los clientes de la API. Las pruebas unitarias robustas complementan esto, asegurando la fiabilidad del código. Juntas, estas prácticas aseguran que la API sea robusta, fácil de usar y mantenible a lo largo del tiempo.

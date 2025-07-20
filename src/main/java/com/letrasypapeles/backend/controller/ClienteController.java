@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,6 +30,7 @@ public class ClienteController {
             @ApiResponse(responseCode = "200", description = "Lista de clientes obtenida exitosamente.")
     })
     @GetMapping
+    @PreAuthorize("hasAnyRole('EMPLEADO', 'GERENTE')")
     public ResponseEntity<CollectionModel<EntityModel<Cliente>>> obtenerTodos() {
         List<EntityModel<Cliente>> clientes = clienteService.obtenerTodos().stream()
                 .map(cliente -> {
@@ -56,6 +58,7 @@ public class ClienteController {
             @ApiResponse(responseCode = "404", description = "Cliente no encontrado.")
     })
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<EntityModel<Cliente>> obtenerPorId(@PathVariable Long id) {
         return clienteService.obtenerPorId(id)
                 .map(cliente -> {
@@ -77,6 +80,7 @@ public class ClienteController {
             @ApiResponse(responseCode = "200", description = "Cliente registrado exitosamente.")
     })
     @PostMapping("/registro")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<EntityModel<Cliente>> registrarCliente(@RequestBody Cliente cliente) {
         Cliente nuevoCliente = clienteService.registrarCliente(cliente);
         nuevoCliente.setContraseña(null);
@@ -96,6 +100,7 @@ public class ClienteController {
             @ApiResponse(responseCode = "404", description = "Cliente no encontrado.")
     })
     @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<EntityModel<Cliente>> actualizarCliente(@PathVariable Long id, @RequestBody Cliente cliente) {
         return clienteService.obtenerPorId(id)
                 .map(c -> {
@@ -120,6 +125,7 @@ public class ClienteController {
             @ApiResponse(responseCode = "404", description = "Cliente no encontrado.")
     })
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('GERENTE')")
     public ResponseEntity<Void> eliminarCliente(@PathVariable Long id) {
         return clienteService.obtenerPorId(id)
                 .map(c -> {

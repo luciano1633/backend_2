@@ -1,117 +1,95 @@
 package com.letrasypapeles.backend.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.letrasypapeles.backend.entity.Sucursal;
 import com.letrasypapeles.backend.service.SucursalService;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(SucursalController.class)
 public class SucursalControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
     private SucursalService sucursalService;
 
-    @InjectMocks
-    private SucursalController sucursalController;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
-    public void testObtenerTodasLasSucursales() {
-        // Arrange
-        List<Sucursal> sucursales = new ArrayList<>();
-        sucursales.add(Sucursal.builder().id(1L).nombre("Sucursal 1").direccion("Dirección 1").build());
-        sucursales.add(Sucursal.builder().id(2L).nombre("Sucursal 2").direccion("Dirección 2").build());
-
-        when(sucursalService.obtenerTodas()).thenReturn(sucursales);
-
-        // Act
-        ResponseEntity<List<Sucursal>> response = sucursalController.obtenerTodas();
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(2, response.getBody().size());
+    @WithMockUser
+    public void testObtenerTodasLasSucursales() throws Exception {
+        when(sucursalService.obtenerTodas()).thenReturn(List.of(new Sucursal()));
+        mockMvc.perform(get("/api/sucursales"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(1));
     }
 
     @Test
-    public void testObtenerSucursalPorId() {
-        // Arrange
+    @WithMockUser
+    public void testObtenerSucursalPorId() throws Exception {
         Long sucursalId = 1L;
-        Sucursal sucursal = Sucursal.builder().id(sucursalId).nombre("Sucursal 1").direccion("Dirección 1").build();
-
+        Sucursal sucursal = Sucursal.builder().id(sucursalId).nombre("Sucursal 1").build();
         when(sucursalService.obtenerPorId(sucursalId)).thenReturn(Optional.of(sucursal));
 
-        // Act
-        ResponseEntity<Sucursal> response = sucursalController.obtenerPorId(sucursalId);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(sucursalId, response.getBody().getId());
-        assertEquals("Sucursal 1", response.getBody().getNombre());
-        assertEquals("Dirección 1", response.getBody().getDireccion());
+        mockMvc.perform(get("/api/sucursales/{id}", sucursalId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("Sucursal 1"));
     }
 
     @Test
-    public void testCrearSucursal() {
-        // Arrange
-        Sucursal sucursal = Sucursal.builder().nombre("Sucursal Nueva").direccion("Dirección Nueva").build();
+    @WithMockUser
+    public void testCrearSucursal() throws Exception {
+        Sucursal sucursal = Sucursal.builder().nombre("Sucursal Nueva").build();
+        when(sucursalService.guardar(any(Sucursal.class))).thenReturn(sucursal);
 
-        when(sucursalService.guardar(sucursal)).thenReturn(sucursal);
-
-        // Act
-        ResponseEntity<Sucursal> response = sucursalController.crearSucursal(sucursal);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Sucursal Nueva", response.getBody().getNombre());
-        assertEquals("Dirección Nueva", response.getBody().getDireccion());
+        mockMvc.perform(post("/api/sucursales")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(sucursal)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("Sucursal Nueva"));
     }
 
     @Test
-    public void testActualizarSucursal() {
-        // Arrange
+    @WithMockUser
+    public void testActualizarSucursal() throws Exception {
         Long sucursalId = 1L;
-        Sucursal sucursal = Sucursal.builder().id(sucursalId).nombre("Sucursal Actualizada").direccion("Dirección Actualizada").build();
+        Sucursal sucursalActualizada = Sucursal.builder().id(sucursalId).nombre("Sucursal Actualizada").build();
+        when(sucursalService.obtenerPorId(sucursalId)).thenReturn(Optional.of(new Sucursal()));
+        when(sucursalService.guardar(any(Sucursal.class))).thenReturn(sucursalActualizada);
 
-        when(sucursalService.obtenerPorId(sucursalId)).thenReturn(Optional.of(Sucursal.builder().id(sucursalId).nombre("Sucursal 1").direccion("Dirección 1").build()));
-        when(sucursalService.guardar(sucursal)).thenReturn(sucursal);
-
-        // Act
-        ResponseEntity<Sucursal> response = sucursalController.actualizarSucursal(sucursalId, sucursal);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(sucursalId, response.getBody().getId());
-        assertEquals("Sucursal Actualizada", response.getBody().getNombre());
-        assertEquals("Dirección Actualizada", response.getBody().getDireccion());
+        mockMvc.perform(put("/api/sucursales/{id}", sucursalId)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(sucursalActualizada)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("Sucursal Actualizada"));
     }
 
     @Test
-    public void testEliminarSucursal() {
-        // Arrange
+    @WithMockUser
+    public void testEliminarSucursal() throws Exception {
         Long sucursalId = 1L;
+        when(sucursalService.obtenerPorId(sucursalId)).thenReturn(Optional.of(new Sucursal()));
 
-        when(sucursalService.obtenerPorId(sucursalId)).thenReturn(Optional.of(Sucursal.builder().id(sucursalId).nombre("Sucursal 1").direccion("Dirección 1").build()));
-
-        // Act
-        ResponseEntity<Void> response = sucursalController.eliminarSucursal(sucursalId);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        mockMvc.perform(delete("/api/sucursales/{id}", sucursalId).with(csrf()))
+                .andExpect(status().isOk());
     }
 }

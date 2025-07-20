@@ -1,131 +1,105 @@
 package com.letrasypapeles.backend.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.letrasypapeles.backend.entity.Reserva;
 import com.letrasypapeles.backend.service.ReservaService;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(ReservaController.class)
 public class ReservaControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
     private ReservaService reservaService;
 
-    @InjectMocks
-    private ReservaController reservaController;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
-    public void testObtenerTodasLasReservas() {
-        // Arrange
-        List<Reserva> reservas = new ArrayList<>();
-        reservas.add(Reserva.builder().id(1L).fechaReserva(LocalDateTime.now()).build());
-        reservas.add(Reserva.builder().id(2L).fechaReserva(LocalDateTime.now()).build());
-
-        when(reservaService.obtenerTodas()).thenReturn(reservas);
-
-        // Act
-        ResponseEntity<List<Reserva>> response = reservaController.obtenerTodas();
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(2, response.getBody().size());
+    @WithMockUser
+    public void testObtenerTodasLasReservas() throws Exception {
+        when(reservaService.obtenerTodas()).thenReturn(List.of(new Reserva()));
+        mockMvc.perform(get("/api/reservas"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(1));
     }
 
     @Test
-    public void testObtenerReservaPorId() {
-        // Arrange
+    @WithMockUser
+    public void testObtenerReservaPorId() throws Exception {
         Long reservaId = 1L;
-        Reserva reserva = Reserva.builder().id(reservaId).fechaReserva(LocalDateTime.now()).build();
-
+        Reserva reserva = Reserva.builder().id(reservaId).build();
         when(reservaService.obtenerPorId(reservaId)).thenReturn(Optional.of(reserva));
 
-        // Act
-        ResponseEntity<Reserva> response = reservaController.obtenerPorId(reservaId);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(reservaId, response.getBody().getId());
+        mockMvc.perform(get("/api/reservas/{id}", reservaId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(reservaId));
     }
 
     @Test
-    public void testCrearReserva() {
-        // Arrange
-        Reserva reserva = Reserva.builder().fechaReserva(LocalDateTime.now()).build();
+    @WithMockUser
+    public void testCrearReserva() throws Exception {
+        Reserva reserva = Reserva.builder().id(1L).fechaReserva(LocalDateTime.now()).build();
+        when(reservaService.guardar(any(Reserva.class))).thenReturn(reserva);
 
-        when(reservaService.guardar(reserva)).thenReturn(reserva);
-
-        // Act
-        ResponseEntity<Reserva> response = reservaController.crearReserva(reserva);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
+        mockMvc.perform(post("/api/reservas")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(reserva)))
+                .andExpect(status().isOk());
     }
 
     @Test
-    public void testActualizarReserva() {
-        // Arrange
+    @WithMockUser
+    public void testActualizarReserva() throws Exception {
         Long reservaId = 1L;
-        Reserva reserva = Reserva.builder().id(reservaId).fechaReserva(LocalDateTime.now()).build();
+        Reserva reservaActualizada = Reserva.builder().id(reservaId).build();
+        when(reservaService.obtenerPorId(reservaId)).thenReturn(Optional.of(new Reserva()));
+        when(reservaService.guardar(any(Reserva.class))).thenReturn(reservaActualizada);
 
-        when(reservaService.obtenerPorId(reservaId)).thenReturn(Optional.of(Reserva.builder().id(reservaId).fechaReserva(LocalDateTime.now()).build()));
-        when(reservaService.guardar(reserva)).thenReturn(reserva);
-
-        // Act
-        ResponseEntity<Reserva> response = reservaController.actualizarReserva(reservaId, reserva);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(reservaId, response.getBody().getId());
+        mockMvc.perform(put("/api/reservas/{id}", reservaId)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(reservaActualizada)))
+                .andExpect(status().isOk());
     }
 
     @Test
-    public void testEliminarReserva() {
-        // Arrange
+    @WithMockUser
+    public void testEliminarReserva() throws Exception {
         Long reservaId = 1L;
+        when(reservaService.obtenerPorId(reservaId)).thenReturn(Optional.of(new Reserva()));
 
-        when(reservaService.obtenerPorId(reservaId)).thenReturn(Optional.of(Reserva.builder().id(reservaId).fechaReserva(LocalDateTime.now()).build()));
-
-        // Act
-        ResponseEntity<Void> response = reservaController.eliminarReserva(reservaId);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        mockMvc.perform(delete("/api/reservas/{id}", reservaId).with(csrf()))
+                .andExpect(status().isOk());
     }
 
     @Test
-    public void testObtenerReservasPorClienteId() {
-        // Arrange
+    @WithMockUser
+    public void testObtenerReservasPorClienteId() throws Exception {
         Long clienteId = 1L;
-        List<Reserva> reservas = new ArrayList<>();
-        reservas.add(Reserva.builder().id(1L).fechaReserva(LocalDateTime.now()).build());
-        reservas.add(Reserva.builder().id(2L).fechaReserva(LocalDateTime.now()).build());
+        when(reservaService.obtenerPorClienteId(clienteId)).thenReturn(List.of(new Reserva()));
 
-        when(reservaService.obtenerPorClienteId(clienteId)).thenReturn(reservas);
-
-        // Act
-        ResponseEntity<List<Reserva>> response = reservaController.obtenerPorClienteId(clienteId);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(2, response.getBody().size());
+        mockMvc.perform(get("/api/reservas/cliente/{clienteId}", clienteId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(1));
     }
 }

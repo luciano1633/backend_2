@@ -4,6 +4,7 @@ import com.letrasypapeles.backend.entity.Proveedor;
 import com.letrasypapeles.backend.service.ProveedorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -15,12 +16,14 @@ public class ProveedorController {
     private ProveedorService proveedorService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('EMPLEADO', 'GERENTE')")
     public ResponseEntity<List<Proveedor>> obtenerTodos() {
         List<Proveedor> proveedores = proveedorService.obtenerTodos();
         return ResponseEntity.ok(proveedores);
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('EMPLEADO', 'GERENTE')")
     public ResponseEntity<Proveedor> obtenerPorId(@PathVariable Long id) {
         return proveedorService.obtenerPorId(id)
                 .map(ResponseEntity::ok)
@@ -28,12 +31,14 @@ public class ProveedorController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('EMPLEADO', 'GERENTE')")
     public ResponseEntity<Proveedor> crearProveedor(@RequestBody Proveedor proveedor) {
         Proveedor nuevoProveedor = proveedorService.guardar(proveedor);
         return ResponseEntity.ok(nuevoProveedor);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('EMPLEADO', 'GERENTE')")
     public ResponseEntity<Proveedor> actualizarProveedor(@PathVariable Long id, @RequestBody Proveedor proveedor) {
         return proveedorService.obtenerPorId(id)
                 .map(p -> {
@@ -45,6 +50,7 @@ public class ProveedorController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('GERENTE')")
     public ResponseEntity<Void> eliminarProveedor(@PathVariable Long id) {
         return proveedorService.obtenerPorId(id)
                 .map(p -> {

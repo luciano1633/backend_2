@@ -4,6 +4,7 @@ import com.letrasypapeles.backend.entity.Role;
 import com.letrasypapeles.backend.service.RoleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -15,12 +16,14 @@ public class RoleController {
     private RoleService roleService;
 
     @GetMapping
+    @PreAuthorize("hasRole('GERENTE')")
     public ResponseEntity<List<Role>> obtenerTodos() {
         List<Role> roles = roleService.obtenerTodos();
         return ResponseEntity.ok(roles);
     }
 
     @GetMapping("/{nombre}")
+    @PreAuthorize("hasRole('GERENTE')")
     public ResponseEntity<Role> obtenerPorNombre(@PathVariable String nombre) {
         return roleService.obtenerPorNombre(nombre)
                 .map(ResponseEntity::ok)
@@ -28,12 +31,14 @@ public class RoleController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('GERENTE')")
     public ResponseEntity<Role> crearRole(@RequestBody Role role) {
         Role nuevoRole = roleService.guardar(role);
         return ResponseEntity.ok(nuevoRole);
     }
 
     @DeleteMapping("/{nombre}")
+    @PreAuthorize("hasRole('GERENTE')")
     public ResponseEntity<Void> eliminarRole(@PathVariable String nombre) {
         return roleService.obtenerPorNombre(nombre)
                 .map(r -> {

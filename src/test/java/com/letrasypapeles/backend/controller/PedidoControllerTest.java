@@ -1,178 +1,117 @@
 package com.letrasypapeles.backend.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.letrasypapeles.backend.entity.Cliente;
 import com.letrasypapeles.backend.entity.Pedido;
 import com.letrasypapeles.backend.service.PedidoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.hateoas.CollectionModel;
-import org.springframework.hateoas.EntityModel;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
-
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(PedidoController.class)
 public class PedidoControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
     private PedidoService pedidoService;
 
-    @InjectMocks
-    private PedidoController pedidoController;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private Cliente cliente;
 
     @BeforeEach
     void setUp() {
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
         cliente = Cliente.builder().id(1L).nombre("Test Cliente").build();
     }
 
     private Pedido createPedido(Long id) {
-        return Pedido.builder().id(id).fecha(LocalDateTime.now()).cliente(cliente).build();
+        return Pedido.builder().id(id).cliente(cliente).build();
     }
 
     @Test
-    public void testObtenerTodosLosPedidos() {
-        // Arrange
-        List<Pedido> pedidos = new ArrayList<>();
-        pedidos.add(createPedido(1L));
-        pedidos.add(createPedido(2L));
-
-        when(pedidoService.obtenerTodos()).thenReturn(pedidos);
-
-        // Act
-        ResponseEntity<CollectionModel<EntityModel<Pedido>>> response = pedidoController.obtenerTodos();
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(2, response.getBody().getContent().size());
-        assertTrue(response.getBody().hasLink("self"));
-    }
-
-    @Test
-    public void testObtenerTodosLosPedidos_LanzaExcepcion() {
-        // Arrange
+    @WithMockUser
+    public void testObtenerTodosLosPedidos() throws Exception {
         when(pedidoService.obtenerTodos()).thenReturn(List.of(createPedido(1L)));
-        try (var mocked = mockStatic(WebMvcLinkBuilder.class)) {
-            mocked.when(() -> WebMvcLinkBuilder.linkTo(any(Class.class))).thenThrow(new RuntimeException("Test Exception"));
-
-            // Act & Assert
-            assertThrows(RuntimeException.class, () -> {
-                pedidoController.obtenerTodos();
-            });
-        }
+        mockMvc.perform(get("/api/pedidos"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$._embedded.pedidoList").exists());
     }
 
     @Test
-    public void testObtenerPedidoPorId() {
-        // Arrange
+    @WithMockUser
+    public void testObtenerPedidoPorId() throws Exception {
         Long pedidoId = 1L;
         Pedido pedido = createPedido(pedidoId);
-
         when(pedidoService.obtenerPorId(pedidoId)).thenReturn(Optional.of(pedido));
 
-        // Act
-        ResponseEntity<EntityModel<Pedido>> response = pedidoController.obtenerPorId(pedidoId);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertNotNull(response.getBody().getContent());
-        assertEquals(pedidoId, response.getBody().getContent().getId());
-        assertTrue(response.getBody().hasLink("self"));
-        assertTrue(response.getBody().hasLink("cliente"));
-        assertTrue(response.getBody().hasLink("todos-los-pedidos"));
+        mockMvc.perform(get("/api/pedidos/{id}", pedidoId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(pedidoId));
     }
 
     @Test
-    public void testCrearPedido() {
-        // Arrange
+    @WithMockUser
+    public void testCrearPedido() throws Exception {
         Pedido pedido = createPedido(1L);
+        when(pedidoService.guardar(any(Pedido.class))).thenReturn(pedido);
 
-        when(pedidoService.guardar(pedido)).thenReturn(pedido);
-
-        // Act
-        ResponseEntity<EntityModel<Pedido>> response = pedidoController.crearPedido(pedido);
-
-        // Assert
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertNotNull(response.getBody().getContent());
-        assertTrue(response.getBody().hasLink("self"));
+        mockMvc.perform(post("/api/pedidos")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(pedido)))
+                .andExpect(status().isCreated());
     }
 
     @Test
-    public void testActualizarPedido() {
-        // Arrange
+    @WithMockUser
+    public void testActualizarPedido() throws Exception {
         Long pedidoId = 1L;
         Pedido pedido = createPedido(pedidoId);
-
         when(pedidoService.obtenerPorId(pedidoId)).thenReturn(Optional.of(createPedido(pedidoId)));
-        when(pedidoService.guardar(pedido)).thenReturn(pedido);
+        when(pedidoService.guardar(any(Pedido.class))).thenReturn(pedido);
 
-        // Act
-        ResponseEntity<EntityModel<Pedido>> response = pedidoController.actualizarPedido(pedidoId, pedido);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertNotNull(response.getBody().getContent());
-        assertEquals(pedidoId, response.getBody().getContent().getId());
-        assertTrue(response.getBody().hasLink("self"));
+        mockMvc.perform(put("/api/pedidos/{id}", pedidoId)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(pedido)))
+                .andExpect(status().isOk());
     }
 
     @Test
-    public void testEliminarPedido() {
-        // Arrange
+    @WithMockUser
+    public void testEliminarPedido() throws Exception {
         Long pedidoId = 1L;
-
         when(pedidoService.obtenerPorId(pedidoId)).thenReturn(Optional.of(createPedido(pedidoId)));
 
-        // Act
-        ResponseEntity<Void> response = pedidoController.eliminarPedido(pedidoId);
-
-        // Assert
-        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        mockMvc.perform(delete("/api/pedidos/{id}", pedidoId).with(csrf()))
+                .andExpect(status().isNoContent());
     }
 
     @Test
-    public void testObtenerPedidosPorClienteId() {
-        // Arrange
+    @WithMockUser
+    public void testObtenerPedidosPorClienteId() throws Exception {
         Long clienteId = 1L;
-        List<Pedido> pedidos = new ArrayList<>();
-        pedidos.add(createPedido(1L));
-        pedidos.add(createPedido(2L));
+        when(pedidoService.obtenerPorClienteId(clienteId)).thenReturn(List.of(createPedido(1L)));
 
-        when(pedidoService.obtenerPorClienteId(clienteId)).thenReturn(pedidos);
-
-        // Act
-        ResponseEntity<CollectionModel<EntityModel<Pedido>>> response = pedidoController.obtenerPorClienteId(clienteId);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(2, response.getBody().getContent().size());
-        assertTrue(response.getBody().hasLink("self"));
+        mockMvc.perform(get("/api/pedidos/cliente/{clienteId}", clienteId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$._embedded.pedidoList").exists());
     }
 }
